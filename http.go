@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"github.com/valyala/fasthttp"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"strings"
 	"time"
@@ -11,7 +12,7 @@ import (
 
 const defaultHttpTimeout = time.Second * 5
 
-func HttpRequest(method, rawUrl string, r io.Reader, w io.Writer, timeout time.Duration, tlsCfg *tls.Config) error {
+func HttpRequest(method, rawUrl string, req io.Reader, rsp io.Writer, timeout time.Duration, tlsCfg *tls.Config) error {
 
 	path, err := url.Parse(rawUrl)
 	if err != nil {
@@ -28,9 +29,8 @@ func HttpRequest(method, rawUrl string, r io.Reader, w io.Writer, timeout time.D
 	request.Header.SetRequestURI(path.Path)
 
 	// read body
-	if r != nil {
-		bodyBytes := make([]byte, 0)
-		if _, err := r.Read(bodyBytes); err != nil {
+	if req != nil {
+		if bodyBytes, err := ioutil.ReadAll(req); err != nil {
 			return err
 		} else {
 			request.SetBody(bodyBytes)
@@ -49,8 +49,8 @@ func HttpRequest(method, rawUrl string, r io.Reader, w io.Writer, timeout time.D
 	}
 
 	// read response
-	if w != nil {
-		if _, err := w.Write(response.Body()); err != nil {
+	if rsp != nil {
+		if _, err := rsp.Write(response.Body()); err != nil {
 			return err
 		}
 	}
